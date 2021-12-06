@@ -52,11 +52,6 @@ class RevertableEntityReducer<Id, Event, E : RevertableEntity<Id, Event, E>>(
             }
         }
     }
-
-    inner class FoldResult(
-        val snapshot: E,
-        val events: List<Event>
-    )
 }
 
 //todo to see if everything's ok and proposed Entity is valid
