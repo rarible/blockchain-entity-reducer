@@ -39,7 +39,7 @@ class RecordList<K, L : Log<L>, R : LogRecord<L, R>, E : Entity<K, L, R, E>>(
         return state.withLogRecords(records.removeStable())
     }
 
-    private fun List<R>.removeStable(): List<R> = filter { record -> markService.isStableMark(record.mark) }
+    private fun List<R>.removeStable(): List<R> = filter { record -> markService.isStableMark(record.mark).not() }
 
     private val R.mark: Mark
         get() = markService.get(this)
