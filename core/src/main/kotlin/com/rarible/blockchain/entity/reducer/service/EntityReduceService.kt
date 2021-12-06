@@ -34,7 +34,7 @@ open class EntityReduceService<K, L : Log<L>, R : LogRecord<L, R>, E : Entity<K,
 
                 val updatedEntity = entityRecords.fold(currentSnapshot) { state, record ->
                     recordList.add(record)
-                    recordList.apply(state, reducer)
+                    recordList.apply(state.snapshot ?: state, reducer)
                 }
                 if (updatedEntity.logRecords != entity?.logRecords) {
                     entityService.update(updatedEntity)
