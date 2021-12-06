@@ -1,15 +1,17 @@
 package com.rarible.blockchain.entity.reducer.framework.service
 
-import com.rarible.blockchain.entity.reducer.framework.model.Entity
-import com.rarible.blockchain.scanner.framework.model.Log
-import com.rarible.blockchain.scanner.framework.model.LogRecord
+import com.rarible.blockchain.entity.reducer.framework.model.Identifiable
 
-interface EntityService<K, L : Log<L>, R : LogRecord<L, R>, E : Entity<K, L, R, E>> {
-    suspend fun get(id: K): E?
+interface EntityService<Id, E> {
+    suspend fun get(id: Id): E?
 
     suspend fun update(entity: E): E
+}
 
-    fun getEntityTemplate(id: K): E
+interface EntityEventService<Event, Id> {
+    fun getEntityId(event: Event): Id
+}
 
-    fun getEntityId(logRecord: R): K
+interface EntityTemplateProvider<Id, E : Identifiable<Id>> {
+    fun getEntityTemplate(id: Id): E
 }
