@@ -26,19 +26,18 @@ open class EntityReduceService<K, L : Log<L>, R : LogRecord<L, R>, E : Entity<K,
                 entityService.getEntityId(record)
             }
             .map { (entityId, entityRecords) ->
-                val currentEntity = entityService.get(entityId) ?: entityService.getEntityTemplate(entityId)
-                val records = RecordList(currentEntity.logRecords, markService)
+                val entity = entityService.get(entityId)
+                val currentSnapshot = entity?.snapshot ?: entityService.getEntityTemplate(entityId)
+                val currentLogRecords = entity?.logRecords ?: emptyList()
 
-                val updatedEntity = entityRecords.fold(currentEntity) { entity, record ->
-                    if (records.canBeApplied(record)) {
-                        records.addOrRemove(record)
-                        reducer.reduce(entity, record)
-                    } else {
-                        entity
-                    }
+                val recordList = RecordList<K, L, R, E>(currentLogRecords, markService)
+
+                val updatedEntity = entityRecords.fold(currentSnapshot) { state, record ->
+                    recordList.add(record)
+                    recordList.apply(state, reducer)
                 }
-                if (currentEntity != updatedEntity) {
-                    entityService.update(updatedEntity.withLogRecords(records.geList()))
+                if (updatedEntity.logRecords != entity?.logRecords) {
+                    entityService.update(updatedEntity)
                 }
                 updatedEntity
             }
