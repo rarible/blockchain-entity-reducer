@@ -27,29 +27,32 @@ interface EventRevertService<Event> {
 
 class RevertableEntityReducer<Id, Event, E : RevertableEntity<Id, Event, E>>(
     private val revertService: EventRevertService<Event>,
-    private val reducer: Reducer<Event, E>,
-    private val reversedReducer: Reducer<Event, E>
-) : Reducer<Pair<Event, Boolean>, E> {
+    private val reducer: Reducer<Event, E>
+) : Reducer<Event, E> {
 
-    override suspend fun reduce(entity: E, event: Pair<Event, Boolean>): E {
-        val (ev, add) = event
-        return if (add) {
-            //todo check here if event has been already applied
-            //  for example comparing entity.events.lastOrNull with ev
-            val newEvents = (entity.events + ev)
-                .filter { revertService.canBeReverted(ev, it) }
-            reducer.reduce(entity, ev)
-                .withEvents(newEvents)
+    override suspend fun reduce(entity: E, event: Event): E {
+        //todo check if event has been already applied
+        //  for example by comparing entity.events.lastOrNull with event
+        val newEvents = (entity.events + event)
+            .filter { revertService.canBeReverted(event, it) }
+        return reducer.reduce(entity, event)
+            .withEvents(newEvents)
+    }
+}
+
+class RevertableEntityReversedReducer<Id, Event, E : RevertableEntity<Id, Event, E>>(
+    private val reversedReducer: Reducer<Event, E>
+) : Reducer<Event, E> {
+
+    override suspend fun reduce(entity: E, event: Event): E {
+        return if (entity.events.contains(event)) {
+            reversedReducer.reduce(entity, event)
+                .withEvents(entity.events - event)
         } else {
-            if (entity.events.contains(ev)) {
-                reversedReducer.reduce(entity, ev)
-                    .withEvents(entity.events - ev)
-            } else {
-                //todo here are possibly some options
-                //  1. when event was already removed, then nothing should be done
-                //  2. when we can't revert because we went forward too much
-                throw ReduceException("Unable to revert $ev from $entity")
-            }
+            //todo here are possibly some options
+            //  1. when event was already removed, then nothing should be done
+            //  2. when we can't revert because we went forward too much
+            throw ReduceException("Unable to revert $event from $entity")
         }
     }
 }
